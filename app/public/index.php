@@ -1,6 +1,60 @@
 <?php
-echo 'juan!';
 
+phpinfo(flags: INFO_ALL);
+
+use App\Cache\TranslationCache;
+use App\Database\Connection;
+use App\Repository\LanguageRepository;
+use App\Repository\TranslationRepository;
+use Symfony\Component\Cache\Adapter\RedisAdapter;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+$client = RedisAdapter::createConnection(
+    "redis://{$_ENV['REDIS_HOST']}:{$_ENV['REDIS_PORT']}"
+);
+
+$cacheAdapter = new RedisAdapter($client);
+
+$databaseConnected = false;
+$languages = [];
+$translation = null;
+$errorMessage = null;
+$phrase = '';
+$selectedLanguage = '';
+
+try {
+    Connection::getInstance()->getPdo()->query('SELECT 1');
+    $databaseConnected = true;
+
+    $languages = (new LanguageRepository())->findAll();
+
+
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $phrase = trim((string) ($_POST['phrase'] ?? ''));
+        $languageId = filter_var($_POST['language'] ?? null, FILTER_VALIDATE_INT);
+        $languageIds = array_map(
+            static fn ($language): int => $language->getId(),
+            $languages
+        );
+
+        if ($phrase === '' || $languageId === false || !in_array($languageId, $languageIds, true)) {
+            $errorMessage = 'Enter a phrase and select a language.';
+        } else {
+            $selectedLanguage = (string) $languageId;
+            $translationCache = new TranslationCache(repository: new TranslationRepository(), cache: $cacheAdapter);
+            $translation = $translationCache->findForLanguage(languageId: $languageId, phrase: $phrase);
+
+            if ($translation === null) {
+                $errorMessage = 'No translation was found for that phrase and language.';
+            }
+        }
+    }
+} catch (\PDOException $exception) {
+    error_log('Database connection failed: ' . $exception->getMessage());
+    $databaseConnected = false;
+}
 ?>
 
 <!doctype html>
@@ -77,32 +131,44 @@ echo 'juan!';
     <div class="py-5">
         <h1 class="display-5 fw-bold text-white">Translate This</h1>
         <div class="col-lg-6 mx-auto">
-            <?php if ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
-                <p class="fs-5 mb-4"><?php echo 'Your translation goes here'; ?></p>
-                <a href="/">Translate another</a>
+            <?php if ($databaseConnected): ?>
+                <p class="alert alert-success">Database connection established.</p>
             <?php else: ?>
+                <p class="alert alert-danger">Could not connect to the database. Check the application logs.</p>
+            <?php endif; ?>
 
-                <p class="fs-5 mb-4">Select a language and enter your word(s).</p>
+            <p class="fs-5 mb-4">Select a language and enter your word(s).</p>
 
-                <form method="post">
-                    <div class="row g-3">
-                        <div class="col">
-                            <select name="language" class="form-select" aria-label="Default select example">
-                                <option selected>Select a language</option>
-                                <option value="1">French</option>
-                                <option value="1">German</option>
-                                <option value="1">Spanish</option>
-                            </select>
-                        </div>
-                        <div class="col">
-                            <input name="phrase" type="text" class="form-control" placeholder="Phrase" aria-label="Phrase">
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-outline-info" type="submit">Translate</button>
-                        </div>
+            <form method="post">
+                <div class="row g-3">
+                    <div class="col">
+                        <select name="language" class="form-select" aria-label="Select a language" required>
+                            <option value="">Select a language</option>
+                            <?php foreach ($languages as $language): ?>
+                                <option value="<?= $language->getId() ?>"
+                                    <?= $selectedLanguage === (string) $language->getId() ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($language->getName(), ENT_QUOTES, 'UTF-8') ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
-                </form>
+                    <div class="col">
+                        <input name="phrase" type="text" class="form-control" placeholder="Phrase"
+                               aria-label="Phrase" value="<?= htmlspecialchars($phrase, ENT_QUOTES, 'UTF-8') ?>" required>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-info" type="submit">Translate</button>
+                    </div>
+                </div>
+            </form>
 
+            <?php if ($translation !== null): ?>
+                <p class="alert alert-info mt-4">
+                    <?= htmlspecialchars($phrase, ENT_QUOTES, 'UTF-8') ?>:
+                    <?= htmlspecialchars($translation, ENT_QUOTES, 'UTF-8') ?>
+                </p>
+            <?php elseif ($errorMessage !== null): ?>
+                <p class="alert alert-warning mt-4"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></p>
             <?php endif; ?>
 
         </div>

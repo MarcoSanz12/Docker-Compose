@@ -11,6 +11,17 @@ services:
   app:
     build:
       dockerfile: ./php/Dockerfile
+      target: app
+
+    environment:
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_PASSWORD: secret
+      MYSQL_DATABASE: docker-php
+      MYSQL_USER: user
+    depends_on:
+      db:
+        condition: service_healthy
 
   db:
     image: mysql:8.0
@@ -22,6 +33,12 @@ services:
       MYSQL_USER: user
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_DATABASE: docker-php
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
 
 volumes:
   mysqldata: 
