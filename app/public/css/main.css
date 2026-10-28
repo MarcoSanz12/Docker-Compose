@@ -1,0 +1,72 @@
+/* Estilos generales de la página. */
+body {
+    min-height: 100vh;
+    display: grid;
+    place-content: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f1f5f9;
+    color: #1e293b;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* El formulario queda como una tarjeta centrada. */
+form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    max-width: 100%;
+    padding: 1.5rem;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.5rem 1.5rem rgb(15 23 42 / 10%);
+}
+
+/* Apariencia común para los controles. */
+input,
+select,
+button {
+    min-height: 2.75rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.4rem;
+}
+
+input {
+    width: 9rem;
+}
+
+/* Resalta el botón para que se identifique como acción principal. */
+button {
+    border-color: #2563eb;
+    background: #2563eb;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #1d4ed8;
+}
+
+/* Muestra el resultado o los avisos como un bloque legible. */
+body > p {
+    padding: 0.9rem 1rem;
+    border-radius: 0.4rem;
+    background: #e2e8f0;
+}
+
+/* En pantallas estrechas, los campos ocupan todo el ancho disponible. */
+@media (max-width: 36rem) {
+    form {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    input,
+    select,
+    button {
+        width: 100%;
+    }
+}

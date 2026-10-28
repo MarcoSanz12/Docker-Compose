@@ -1,0 +1,18 @@
+/* Quita los márgenes y el relleno que los navegadores agregan por defecto. */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body,
+h1,
+p {
+    margin: 0;
+}
+
+button,
+input,
+select {
+    font: inherit;
+}

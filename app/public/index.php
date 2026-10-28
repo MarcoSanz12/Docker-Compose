@@ -1,3 +1,6 @@
+<?php
+require_once __DIR__ . '/../src/functions.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -31,6 +34,24 @@
         $num01 = (float) filter_input(INPUT_POST,"num01",FILTER_SANITIZE_NUMBER_FLOAT);
         $num02 = (float) filter_input(INPUT_POST,"num02",FILTER_SANITIZE_NUMBER_FLOAT);
         $operator = (string) htmlspecialchars($_POST["operator"]);
+
+        $hasErrors = false;
+
+        if (empty($num01) || empty($num02) || empty($operator)){
+            echo "<p>Fill in all fields!</p>";
+            $hasErrors = true;
+        }
+
+        // ERROR - No numbers
+        else if (!is_numeric($num01) || !is_numeric($num02)){
+            echo "<p>Only write numbers!</p>";
+            $hasErrors = true;
+        }
+
+        // Calculate the numbers if no errors
+        if (!$hasErrors){
+            echo "<p>Result: " . calculate($num01, $num02, $operator) . "</p>";
+        }
     }
     ?>
 </body>
